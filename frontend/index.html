@@ -1,0 +1,357 @@
+<!-- frontend/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preemptive Debugger - Multi-Agent Code Healing</title>
+    <style>
+        body {
+            font-family: 'Monaco', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            color: white;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.8);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin: 0;
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .input-section {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        textarea {
+            flex: 1;
+            height: 300px;
+            background: #1a1a1a;
+            color: #00ff00;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'Monaco', monospace;
+            font-size: 14px;
+            resize: vertical;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 200px;
+        }
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255,107,107,0.3);
+        }
+        button:disabled {
+            opacity: 0.6;
+            transform: none;
+            cursor: not-allowed;
+        }
+        .results {
+            display: none;
+            margin-top: 30px;
+        }
+        .agent-flow {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .vulnerability {
+            background: rgba(255,107,107,0.2);
+            border-left: 4px solid #ff6b6b;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .fix {
+            background: rgba(72,187,120,0.2);
+            border-left: 4px solid #48bb78;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .code-diff {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .code-block {
+            background: #1a1a1a;
+            border-radius: 10px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+        .code-block h3 {
+            margin-top: 0;
+            color: #feca57;
+        }
+        .code-block pre {
+            margin: 0;
+            color: #00ff00;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .prevention-score {
+            font-size: 3em;
+            text-align: center;
+            color: #48bb78;
+            font-weight: bold;
+            text-shadow: 0 0 20px #48bb78;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 4px solid #feca57;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔮 Preemptive Debugger</h1>
+            <p>Multi-Agent Code Healing System - Fix Bugs Before They Happen</p>
+        </div>
+        
+        <div class="input-section">
+            <textarea id="codeInput" placeholder="Paste your code here...">
+# Example buggy Python code
+def divide_numbers(a, b):
+    result = a / b  # No error handling!
+    return result
+
+def process_list(items):
+    for item in items:
+        if item > 0:
+            print(item * 2)
+    # No validation of input
+
+numbers = [1, 2, 0, -1, "invalid"]
+for num in numbers:
+    print(divide_numbers(10, num))
+            </textarea>
+            
+            <div class="controls">
+                <button onclick="analyzeCode()" id="analyzeBtn">
+                    🚀 Analyze & Heal Code
+                </button>
+                <button onclick="loadExample('python')">
+                    📝 Load Python Example
+                </button>
+                <button onclick="loadExample('javascript')">
+                    📝 Load JavaScript Example
+                </button>
+                <button onclick="clearResults()">
+                    🗑️ Clear Results
+                </button>
+            </div>
+        </div>
+        
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <h3>🤖 Agents are working...</h3>
+            <p>Temporal Analyzer → Vulnerability Prophet → Auto Healer → Code Guardian</p>
+        </div>
+        
+        <div id="results" class="results">
+            <div class="agent-flow">
+                <h2>🔄 Agent Orchestration Flow</h2>
+                <div id="agentInteractions"></div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 200px; gap: 20px;">
+                <div>
+                    <h2>🚨 Vulnerabilities Detected</h2>
+                    <div id="vulnerabilities"></div>
+                    
+                    <h2>🛠️ Fixes Applied</h2>
+                    <div id="fixes"></div>
+                </div>
+                
+                <div style="text-align: center;">
+                    <h3>Prevention Score</h3>
+                    <div id="preventionScore" class="prevention-score">0%</div>
+                </div>
+            </div>
+            
+            <div class="code-diff">
+                <div class="code-block">
+                    <h3>📄 Original Code</h3>
+                    <pre id="originalCode"></pre>
+                </div>
+                <div class="code-block">
+                    <h3>✨ Healed Code</h3>
+                    <pre id="patchedCode"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        
+        async function analyzeCode() {
+            const code = document.getElementById('codeInput').value.trim();
+            if (!code) {
+                alert('Please enter some code to analyze!');
+                return;
+            }
+            
+            const btn = document.getElementById('analyzeBtn');
+            btn.disabled = true;
+            btn.textContent = '🔄 Analyzing...';
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/preemptive-debug`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code: code })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                displayResults(result);
+                
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+                console.error('Analysis error:', error);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🚀 Analyze & Heal Code';
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        function displayResults(result) {
+            // Show agent interactions
+            const interactions = document.getElementById('agentInteractions');
+            interactions.innerHTML = result.agent_interactions.map(interaction => 
+                `<div style="padding: 5px; background: rgba(255,255,255,0.1); margin: 5px 0; border-radius: 5px;">${interaction}</div>`
+            ).join('');
+            
+            // Show vulnerabilities
+            const vulnDiv = document.getElementById('vulnerabilities');
+            vulnDiv.innerHTML = result.vulnerabilities_detected.map(vuln => `
+                <div class="vulnerability">
+                    <strong>${vuln.type.toUpperCase()}</strong> - ${vuln.severity}
+                    <br>Line ${vuln.line}: ${vuln.description}
+                </div>
+            `).join('');
+            
+            // Show fixes
+            const fixesDiv = document.getElementById('fixes');
+            fixesDiv.innerHTML = result.fixes_applied.map(fix => `
+                <div class="fix">
+                    <strong>${fix.fix_type}</strong><br>
+                    ${fix.description}
+                </div>
+            `).join('');
+            
+            // Show prevention score
+            document.getElementById('preventionScore').textContent = 
+                Math.round(result.prevention_score * 100) + '%';
+            
+            // Show code comparison
+            document.getElementById('originalCode').textContent = result.original_code;
+            document.getElementById('patchedCode').textContent = result.patched_code;
+            
+            document.getElementById('results').style.display = 'block';
+        }
+        
+        function loadExample(type) {
+            const examples = {
+                python: `# Buggy Python code with multiple issues
+def divide_and_process(numbers, divisor):
+    results = []
+    for num in numbers:
+        result = num / divisor  # No zero division check
+        results.append(result)
+    return results
+
+def unsafe_file_read(filename):
+    file = open(filename, 'r')  # No error handling
+    content = file.read()
+    return content  # File never closed
+
+# Usage that will cause problems
+data = [10, 20, 30, "invalid", None]
+print(divide_and_process(data, 0))  # Multiple bugs here!`,
+                
+                javascript: `// Buggy JavaScript code
+function processUserData(userData) {
+    const name = userData.name.toUpperCase();  // No null check
+    const age = parseInt(userData.age);
+    
+    if (age > 18) {
+        localStorage.setItem('user', userData);  // No serialization
+    }
+    
+    return {
+        name: name,
+        canVote: age >= 18
+    };
+}
+
+// This will crash
+const user = null;
+processUserData(user);`
+            };
+            
+            document.getElementById('codeInput').value = examples[type];
+        }
+        
+        function clearResults() {
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('codeInput').value = '';
+        }
+    </script>
+</body>
+</html>
